@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>爱心提示 💖</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<style>
+  html,body{
+    height:100%;
+    margin:0;
+    background: radial-gradient(circle at 50% 30%, #FFF6F9 0%, #FFF 40%, #F7FBFF 100%);
+    font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
+    overflow:hidden;
+  }
+  .stage{
+    position:fixed;inset:0;overflow:hidden;
+    pointer-events:none;
+  }
+  .popup{
+    position:absolute;
+    width:220px;height:70px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:12px;padding:8px 12px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.12);
+    font-size:14px;font-weight:600;color:#b80000;
+    background:#FFD6E7;
+    transform:translate(-50%,-50%) scale(0.9);
+    opacity:0;transition:opacity .18s ease,transform .18s ease;
+  }
+  .popup.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+  .fadeout{transition:opacity .9s ease;opacity:0!important;}
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+
+<script>
+(async function(){
+  const POINTS=280,DELAY_MS=120,STAY_MS=10000;
+  const msgs=["保持好心情","多喝热水","早点休息","吃点水果",
+              "要多笑一笑","祝你开心","放松一下","今天真好",
+              "注意休息","记得微笑","开心每一天","温柔对待自己 💕"];
+  const colors=["#FFD6E7","#FFF0B3","#C8F7C5","#C5F0FF","#E6E6FA","#FFB6C1","#FFDAB9","#FFFACD"];
+  const stage=document.getElementById('stage');
+  const base=Math.min(window.innerWidth,window.innerHeight);
+  const scale=Math.max(10,Math.round(base/20));
+  function heartPoints(n){
+    const pts=[];for(let i=0;i<n;i++){
+      const t=2*Math.PI*i/n;
+      const x=16*Math.sin(t)**3;
+      const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+      pts.push({x,y});
+    }return pts;
+  }
+  function ordered(points){
+    let minI=0,minY=points[0].y;
+    for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;}}
+    return points.slice(minI).concat(points.slice(0,minI));
+  }
+  function makePopup(pt,text){
+    const el=document.createElement('div');
+    el.className='popup';el.textContent=text;
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    const px=pt.x*scale,py=-pt.y*scale;
+    el.style.left=`calc(50% + ${px}px)`;el.style.top=`calc(50% + ${py}px)`;
+    stage.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
+    return el;
+  }
+  const pts=ordered(heartPoints(POINTS));
+  for(const p of pts){
+    makePopup(p,msgs[Math.floor(Math.random()*msgs.length)]);
+    await new Promise(r=>setTimeout(r,DELAY_MS));
+  }
+  await new Promise(r=>setTimeout(r,STAY_MS));
+  const all=[...stage.querySelectorAll('.popup')];
+  all.forEach(e=>e.classList.add('fadeout'));
+  await new Promise(r=>setTimeout(r,900));
+  stage.innerHTML='';
+})();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
+</script>
+</body>
+</html>
