@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>爱心提示 💖</title>
+<title>天天开心</title>
 <style>
 html,body{
   height:100%;
@@ -15,6 +15,71 @@ html,body{
   justify-content:center;
   align-items:center;
 }
+
+/* 小窗弹窗 */
+.window{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%) scale(1);
+  background: rgba(255,255,255,0.95);
+  border-radius:16px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.15);
+  width:300px;
+  padding:20px;
+  text-align:center;
+  cursor:default;
+  user-select:none;
+  opacity:0;
+  transition:opacity 0.3s ease, transform 0.3s ease;
+}
+
+.window.show{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1);
+}
+
+/* 关闭按钮 */
+.closeBtn{
+  position:absolute;
+  top:10px;
+  right:12px;
+  font-size:18px;
+  font-weight:bold;
+  color:#b80000;
+  cursor:pointer;
+}
+
+/* 上半部分文字（点击开始） */
+#clickHint{
+  font-size:22px;
+  color:#b80000;
+  background: rgba(255,230,240,0.9);
+  padding:10px 16px;
+  border-radius:12px;
+  margin-bottom:12px;
+  animation: pulse 1s infinite;
+  cursor:pointer;
+}
+
+/* 下半部分文字（祝你天天开心） */
+#dailyHint{
+  font-size:28px;
+  font-weight:bold;
+  color:#b80000;
+  background: rgba(255,245,230,0.9);
+  padding:12px 16px;
+  border-radius:12px;
+  animation: pulse 1s infinite;
+  cursor:pointer; /* 可以点击消失 */
+}
+
+@keyframes pulse {
+  0%,100%{ transform: scale(1); opacity:1; }
+  50%{ transform: scale(1.05); opacity:0.85; }
+}
+
+/* 心形弹窗 */
 .stage{
   position:fixed;inset:0;overflow:hidden;
   pointer-events:none;
@@ -35,30 +100,16 @@ html,body{
 }
 .popup.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
 .fadeout{transition:opacity .9s ease;opacity:0!important;}
-
-#clickHint{
-  position:absolute;
-  font-size:24px;
-  color:#b80000;
-  background: rgba(255,255,255,0.7);
-  padding:12px 20px;
-  border-radius:12px;
-  cursor:pointer;
-  user-select:none;
-  animation: pulse 1s infinite;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-}
-@keyframes pulse {
-  0%,100%{ transform: scale(1); opacity:1; }
-  50%{ transform: scale(1.1); opacity:0.8; }
-}
 </style>
 </head>
 <body>
 
-<div id="clickHint">点一下开始 💖</div>
+<div id="window" class="window">
+  <div class="closeBtn" id="closeBtn">✕</div>
+  <div id="clickHint">点一下开始 💖</div>
+  <div id="dailyHint">祝你天天开心</div>
+</div>
+
 <div class="stage" id="stage"></div>
 <audio id="bgm" src="music.mp3" loop></audio>
 
@@ -70,10 +121,19 @@ const msgs=["保持好心情","多喝热水","早点休息","吃点水果",
 const colors=["#FFD6E7","#FFF0B3","#C8F7C5","#C5F0FF","#E6E6FA","#FFB6C1","#FFDAB9","#FFFACD"];
 const stage=document.getElementById('stage');
 const clickHint=document.getElementById('clickHint');
+const dailyHint=document.getElementById('dailyHint');
+const windowDiv=document.getElementById('window');
+const closeBtn=document.getElementById('closeBtn');
 
 let currentPoints=[], currentScale=1, originalScale=1;
 let popups=[];
 
+// 关闭窗口
+closeBtn.addEventListener('click',()=>{
+  windowDiv.style.display='none';
+});
+
+// 心形点位
 function heartPoints(n){
   const pts=[];
   for(let i=0;i<n;i++){
@@ -126,11 +186,14 @@ function fadeOutAudio(audio,duration=3000){
   }, step);
 }
 
-// 弹窗依次显示
 async function showHeartWithMusic(){
-  clickHint.style.display='none';
-  stage.innerHTML='';
-  popups=[];
+  // 点击开始文字缩小
+  clickHint.style.fontSize='16px';
+  // 底部文字变大
+  dailyHint.style.fontSize='36px';
+
+  // 点击任意一行文字后隐藏整个小窗
+  windowDiv.classList.remove('show');
 
   const bgm=document.getElementById('bgm');
   bgm.play().catch(()=>{});
@@ -155,7 +218,6 @@ async function showHeartWithMusic(){
   currentPoints=[]; popups=[];
 }
 
-// 平滑缩放函数
 function resizePopups(){
   if(currentPoints.length===0) return;
   currentScale = computeScale();
@@ -171,16 +233,21 @@ function resizePopups(){
   });
 }
 
-// 窗口缩放时平滑过渡
 let resizeTimeout;
 window.addEventListener('resize', ()=>{
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(resizePopups, 50); // 50ms 延迟避免频繁触发
+  resizeTimeout = setTimeout(resizePopups, 50);
 });
 
-clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
+// 初始显示窗口
+requestAnimationFrame(()=>{
+  windowDiv.classList.add('show');
+});
 
-// 注册 Service Worker
+// 点击任意文字触发心形弹窗
+clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
+dailyHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
+
 if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
 </script>
 </body>
