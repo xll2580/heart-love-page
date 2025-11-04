@@ -46,9 +46,6 @@
     cursor:pointer;
     user-select:none;
     animation: pulse 1s infinite;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
   }
   @keyframes pulse {
     0%, 100% { transform: scale(1); opacity:1; }
@@ -57,13 +54,12 @@
 </style>
 </head>
 <body>
-
 <!-- 点击提示 -->
 <div id="clickHint">点一下开始 💖</div>
 
 <div class="stage" id="stage"></div>
 
-<!-- 音乐（与 HTML 同级） -->
+<!-- 音乐（和 HTML 同目录） -->
 <audio id="bgm" src="music.mp3" loop></audio>
 
 <script>
@@ -103,7 +99,9 @@ function makePopup(pt,text,scale){
 // 音乐淡入淡出
 function fadeInAudio(audio, duration=3000){
   audio.volume=0;
-  let step=50, volStep=step/duration, vol=0;
+  let step=50;
+  let volStep=step/duration;
+  let vol=0;
   const interval=setInterval(()=>{
     vol+=volStep;
     if(vol>=1){vol=1; clearInterval(interval);}
@@ -111,7 +109,9 @@ function fadeInAudio(audio, duration=3000){
   }, step);
 }
 function fadeOutAudio(audio,duration=3000){
-  let step=50, volStep=step/duration, vol=audio.volume;
+  let step=50;
+  let volStep=step/duration;
+  let vol=audio.volume;
   const interval=setInterval(()=>{
     vol-=volStep;
     if(vol<=0){vol=0; clearInterval(interval); audio.pause();}
@@ -119,16 +119,18 @@ function fadeOutAudio(audio,duration=3000){
   }, step);
 }
 
-// 点击触发播放，动画逻辑完全不变
-clickHint.addEventListener('click', async ()=>{
-  clickHint.style.display='none';
-  const bgm=document.getElementById('bgm');
-  bgm.play().catch(()=>{});
-  fadeInAudio(bgm, DELAY_MS*POINTS);
-
-  const pts=ordered(heartPoints(POINTS));
+// 心形动画 + 音乐同步
+async function showHeartWithMusic(){
+  clickHint.style.display='none'; // 隐藏点击提示
+  stage.innerHTML='';
   const base=Math.min(window.innerWidth,window.innerHeight);
   const scale=Math.max(10,Math.round(base/20));
+  const pts=ordered(heartPoints(POINTS));
+
+  const bgm=document.getElementById('bgm');
+  bgm.volume=0;
+  bgm.play().catch(()=>{});
+  fadeInAudio(bgm, DELAY_MS*pts.length); // 弹窗出现总时长淡入
 
   for(const p of pts){
     makePopup(p,msgs[Math.floor(Math.random()*msgs.length)],scale);
@@ -138,12 +140,16 @@ clickHint.addEventListener('click', async ()=>{
   await new Promise(r=>setTimeout(r,STAY_MS));
   const all=[...stage.querySelectorAll('.popup')];
   all.forEach(e=>e.classList.add('fadeout'));
-  fadeOutAudio(bgm, 900);
+  fadeOutAudio(bgm, 900); // 弹窗消失淡出音乐
   await new Promise(r=>setTimeout(r,900));
   stage.innerHTML='';
-});
+}
 
+// 注册 Service Worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
+
+// 点击提示触发播放
+clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
 </script>
 </body>
 </html>
