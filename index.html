@@ -4,62 +4,62 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>爱心提示 💖</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.png">
 <style>
-  html,body{
-    height:100%;
-    margin:0;
-    background: radial-gradient(circle at 50% 30%, #FFF6F9 0%, #FFF 40%, #F7FBFF 100%);
-    font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
-    overflow:hidden;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-  }
-  .stage{
-    position:fixed;inset:0;overflow:hidden;
-    pointer-events:none;
-  }
-  .popup{
-    position:absolute;
-    width:220px;height:70px;
-    display:flex;align-items:center;justify-content:center;
-    border-radius:12px;padding:8px 12px;
-    box-shadow:0 6px 18px rgba(0,0,0,0.12);
-    font-size:14px;font-weight:600;color:#b80000;
-    background:#FFD6E7;
-    transform:translate(-50%,-50%) scale(0.9);
-    opacity:0;transition:opacity .18s ease,transform .18s ease;
-  }
-  .popup.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
-  .fadeout{transition:opacity .9s ease;opacity:0!important;}
+html,body{
+  height:100%;
+  margin:0;
+  background: radial-gradient(circle at 50% 30%, #FFF6F9 0%, #FFF 40%, #F7FBFF 100%);
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.stage{
+  position:fixed;inset:0;overflow:hidden;
+  pointer-events:none;
+}
+.popup{
+  position:absolute;
+  width:220px;height:70px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:12px;padding:8px 12px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.12);
+  font-size:14px;font-weight:600;color:#b80000;
+  background:#FFD6E7;
+  transform:translate(-50%,-50%) scale(0.9);
+  opacity:0;
+  transition:opacity .18s ease,transform .18s ease,
+              left .2s ease,top .2s ease,
+              width .2s ease,height .2s ease,font-size .2s ease;
+}
+.popup.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.fadeout{transition:opacity .9s ease;opacity:0!important;}
 
-  /* 点击提示样式 */
-  #clickHint{
-    position:absolute;
-    font-size:24px;
-    color:#b80000;
-    background: rgba(255,255,255,0.7);
-    padding:12px 20px;
-    border-radius:12px;
-    cursor:pointer;
-    user-select:none;
-    animation: pulse 1s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity:1; }
-    50% { transform: scale(1.1); opacity:0.8; }
-  }
+#clickHint{
+  position:absolute;
+  font-size:24px;
+  color:#b80000;
+  background: rgba(255,255,255,0.7);
+  padding:12px 20px;
+  border-radius:12px;
+  cursor:pointer;
+  user-select:none;
+  animation: pulse 1s infinite;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+@keyframes pulse {
+  0%,100%{ transform: scale(1); opacity:1; }
+  50%{ transform: scale(1.1); opacity:0.8; }
+}
 </style>
 </head>
 <body>
-<!-- 点击提示 -->
+
 <div id="clickHint">点一下开始 💖</div>
-
 <div class="stage" id="stage"></div>
-
-<!-- 音乐（和 HTML 同目录） -->
 <audio id="bgm" src="music.mp3" loop></audio>
 
 <script>
@@ -70,6 +70,9 @@ const msgs=["保持好心情","多喝热水","早点休息","吃点水果",
 const colors=["#FFD6E7","#FFF0B3","#C8F7C5","#C5F0FF","#E6E6FA","#FFB6C1","#FFDAB9","#FFFACD"];
 const stage=document.getElementById('stage');
 const clickHint=document.getElementById('clickHint');
+
+let currentPoints=[], currentScale=1, originalScale=1;
+let popups=[];
 
 function heartPoints(n){
   const pts=[];
@@ -83,25 +86,31 @@ function heartPoints(n){
 }
 function ordered(points){
   let minI=0,minY=points[0].y;
-  for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;} }
+  for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;}}
   return points.slice(minI).concat(points.slice(0,minI));
+}
+function computeScale(){
+  const base=Math.min(window.innerWidth, window.innerHeight);
+  return Math.floor(base / (2 * 17 / 0.85));
 }
 function makePopup(pt,text,scale){
   const el=document.createElement('div');
   el.className='popup';el.textContent=text;
   el.style.background=colors[Math.floor(Math.random()*colors.length)];
-  const px=pt.x*scale,py=-pt.y*scale;
-  el.style.left=`calc(50% + ${px}px)`;el.style.top=`calc(50% + ${py}px)`;
-  stage.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
+  const px=pt.x*scale, py=-pt.y*scale;
+  el.style.left=`calc(50% + ${px}px)`;
+  el.style.top=`calc(50% + ${py}px)`;
+  el.dataset.baseWidth = 220;
+  el.dataset.baseHeight = 70;
+  el.dataset.baseFont = 14;
+  stage.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
   return el;
 }
 
-// 音乐淡入淡出
-function fadeInAudio(audio, duration=3000){
+function fadeInAudio(audio,duration=3000){
   audio.volume=0;
-  let step=50;
-  let volStep=step/duration;
-  let vol=0;
+  let step=50, volStep=step/duration, vol=0;
   const interval=setInterval(()=>{
     vol+=volStep;
     if(vol>=1){vol=1; clearInterval(interval);}
@@ -109,9 +118,7 @@ function fadeInAudio(audio, duration=3000){
   }, step);
 }
 function fadeOutAudio(audio,duration=3000){
-  let step=50;
-  let volStep=step/duration;
-  let vol=audio.volume;
+  let step=50, volStep=step/duration, vol=audio.volume;
   const interval=setInterval(()=>{
     vol-=volStep;
     if(vol<=0){vol=0; clearInterval(interval); audio.pause();}
@@ -119,37 +126,62 @@ function fadeOutAudio(audio,duration=3000){
   }, step);
 }
 
-// 心形动画 + 音乐同步
+// 弹窗依次显示
 async function showHeartWithMusic(){
-  clickHint.style.display='none'; // 隐藏点击提示
+  clickHint.style.display='none';
   stage.innerHTML='';
-  const base=Math.min(window.innerWidth,window.innerHeight);
-  const scale=Math.max(10,Math.round(base/20));
-  const pts=ordered(heartPoints(POINTS));
+  popups=[];
 
   const bgm=document.getElementById('bgm');
-  bgm.volume=0;
   bgm.play().catch(()=>{});
-  fadeInAudio(bgm, DELAY_MS*pts.length); // 弹窗出现总时长淡入
+  fadeInAudio(bgm, DELAY_MS*POINTS);
 
-  for(const p of pts){
-    makePopup(p,msgs[Math.floor(Math.random()*msgs.length)],scale);
+  const pts=ordered(heartPoints(POINTS));
+  currentPoints=pts;
+  originalScale = computeScale();
+  currentScale = originalScale;
+
+  for(const pt of pts){
+    const popup = makePopup(pt,msgs[Math.floor(Math.random()*msgs.length)],currentScale);
+    popups.push(popup);
     await new Promise(r=>setTimeout(r,DELAY_MS));
   }
 
   await new Promise(r=>setTimeout(r,STAY_MS));
-  const all=[...stage.querySelectorAll('.popup')];
-  all.forEach(e=>e.classList.add('fadeout'));
-  fadeOutAudio(bgm, 900); // 弹窗消失淡出音乐
+  popups.forEach(e=>e.classList.add('fadeout'));
+  fadeOutAudio(bgm,900);
   await new Promise(r=>setTimeout(r,900));
   stage.innerHTML='';
+  currentPoints=[]; popups=[];
 }
+
+// 平滑缩放函数
+function resizePopups(){
+  if(currentPoints.length===0) return;
+  currentScale = computeScale();
+  const scaleRatio = currentScale / originalScale;
+  popups.forEach((el,i)=>{
+    const pt=currentPoints[i];
+    const px=pt.x*currentScale, py=-pt.y*currentScale;
+    el.style.left=`calc(50% + ${px}px)`;
+    el.style.top=`calc(50% + ${py}px)`;
+    el.style.width = el.dataset.baseWidth*scaleRatio + 'px';
+    el.style.height = el.dataset.baseHeight*scaleRatio + 'px';
+    el.style.fontSize = el.dataset.baseFont*scaleRatio + 'px';
+  });
+}
+
+// 窗口缩放时平滑过渡
+let resizeTimeout;
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(resizePopups, 50); // 50ms 延迟避免频繁触发
+});
+
+clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
 
 // 注册 Service Worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
-
-// 点击提示触发播放
-clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
 </script>
 </body>
 </html>
