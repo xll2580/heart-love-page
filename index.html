@@ -21,10 +21,11 @@ html,body{
 }
 .popup{
   position:absolute;
+  width:220px;height:70px;
   display:flex;align-items:center;justify-content:center;
   border-radius:12px;padding:8px 12px;
   box-shadow:0 6px 18px rgba(0,0,0,0.12);
-  font-weight:600;color:#b80000;
+  font-size:14px;font-weight:600;color:#b80000;
   background:#FFD6E7;
   transform:translate(-50%,-50%) scale(0.9);
   opacity:0;
@@ -62,7 +63,7 @@ html,body{
 <audio id="bgm" src="music.mp3" loop></audio>
 
 <script>
-const DELAY_MS=120,STAY_MS=10000;
+const POINTS=280,DELAY_MS=120,STAY_MS=10000;
 const msgs=["保持好心情","多喝热水","早点休息","吃点水果",
             "要多笑一笑","祝你开心","放松一下","今天真好",
             "注意休息","记得微笑","开心每一天","温柔对待自己 💕"];
@@ -73,7 +74,6 @@ const clickHint=document.getElementById('clickHint');
 let currentPoints=[], currentScale=1, originalScale=1;
 let popups=[];
 
-// 心形基础点
 function heartPoints(n){
   const pts=[];
   for(let i=0;i<n;i++){
@@ -86,54 +86,28 @@ function heartPoints(n){
 }
 function ordered(points){
   let minI=0,minY=points[0].y;
-  for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;} }
+  for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;}}
   return points.slice(minI).concat(points.slice(0,minI));
 }
-
-// 自适应心形和点数
-function computeScaleAndPoints(){
-  const minSide = Math.min(window.innerWidth, window.innerHeight);
-  const baseWidth = 220, baseHeight = 70;
-  const maxRadius = (minSide/2) - Math.max(baseWidth, baseHeight)/2;
-  const scale = Math.max(3, maxRadius/17);
-
-  let points;
-  if(minSide < 350) points = 60;
-  else if(minSide < 500) points = 100;
-  else if(minSide < 700) points = 180;
-  else points = 280;
-
-  return { scale, points };
+function computeScale(){
+  const base=Math.min(window.innerWidth, window.innerHeight);
+  return Math.floor(base / (2 * 17 / 0.85));
 }
-
-// 弹窗生成（大小统一）
 function makePopup(pt,text,scale){
   const el=document.createElement('div');
   el.className='popup';el.textContent=text;
   el.style.background=colors[Math.floor(Math.random()*colors.length)];
-
-  const px = pt.x*scale;
-  const py = -pt.y*scale;
-
+  const px=pt.x*scale, py=-pt.y*scale;
   el.style.left=`calc(50% + ${px}px)`;
   el.style.top=`calc(50% + ${py}px)`;
-
-  // 基础尺寸（所有弹窗统一）
   el.dataset.baseWidth = 220;
   el.dataset.baseHeight = 70;
   el.dataset.baseFont = 14;
-
-  const scaleRatio = scale / originalScale;
-  el.style.width = el.dataset.baseWidth * scaleRatio + 'px';
-  el.style.height = el.dataset.baseHeight * scaleRatio + 'px';
-  el.style.fontSize = el.dataset.baseFont * scaleRatio + 'px';
-
   stage.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));
   return el;
 }
 
-// 音乐淡入淡出
 function fadeInAudio(audio,duration=3000){
   audio.volume=0;
   let step=50, volStep=step/duration, vol=0;
@@ -152,7 +126,7 @@ function fadeOutAudio(audio,duration=3000){
   }, step);
 }
 
-// 主动画
+// 弹窗依次显示
 async function showHeartWithMusic(){
   clickHint.style.display='none';
   stage.innerHTML='';
@@ -160,12 +134,12 @@ async function showHeartWithMusic(){
 
   const bgm=document.getElementById('bgm');
   bgm.play().catch(()=>{});
+  fadeInAudio(bgm, DELAY_MS*POINTS);
 
-  const { scale, points } = computeScaleAndPoints();
-  currentScale = scale;
-  const pts=ordered(heartPoints(points));
+  const pts=ordered(heartPoints(POINTS));
   currentPoints=pts;
-  originalScale = scale;
+  originalScale = computeScale();
+  currentScale = originalScale;
 
   for(const pt of pts){
     const popup = makePopup(pt,msgs[Math.floor(Math.random()*msgs.length)],currentScale);
@@ -179,38 +153,34 @@ async function showHeartWithMusic(){
   await new Promise(r=>setTimeout(r,900));
   stage.innerHTML='';
   currentPoints=[]; popups=[];
-  clickHint.style.display='block'; // 可再次点击
 }
 
-// 调整弹窗位置和大小
+// 平滑缩放函数
 function resizePopups(){
   if(currentPoints.length===0) return;
-  const { scale } = computeScaleAndPoints();
-  currentScale = scale;
+  currentScale = computeScale();
   const scaleRatio = currentScale / originalScale;
-
   popups.forEach((el,i)=>{
-    const pt = currentPoints[i];
-    const px=pt.x*currentScale;
-    const py=-pt.y*currentScale;
-
-    el.style.left = `calc(50% + ${px}px)`;
-    el.style.top  = `calc(50% + ${py}px)`;
-    
-    // 弹窗和文字大小统一
-    el.style.width = el.dataset.baseWidth * scaleRatio + 'px';
-    el.style.height = el.dataset.baseHeight * scaleRatio + 'px';
-    el.style.fontSize = el.dataset.baseFont * scaleRatio + 'px';
+    const pt=currentPoints[i];
+    const px=pt.x*currentScale, py=-pt.y*currentScale;
+    el.style.left=`calc(50% + ${px}px)`;
+    el.style.top=`calc(50% + ${py}px)`;
+    el.style.width = el.dataset.baseWidth*scaleRatio + 'px';
+    el.style.height = el.dataset.baseHeight*scaleRatio + 'px';
+    el.style.fontSize = el.dataset.baseFont*scaleRatio + 'px';
   });
 }
 
+// 窗口缩放时平滑过渡
 let resizeTimeout;
 window.addEventListener('resize', ()=>{
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(resizePopups,50);
+  resizeTimeout = setTimeout(resizePopups, 50); // 50ms 延迟避免频繁触发
 });
 
-clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:false});
+clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
+
+// 注册 Service Worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
 </script>
 </body>
