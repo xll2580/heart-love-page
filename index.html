@@ -21,11 +21,10 @@ html,body{
 }
 .popup{
   position:absolute;
-  width:220px;height:70px;
   display:flex;align-items:center;justify-content:center;
   border-radius:12px;padding:8px 12px;
   box-shadow:0 6px 18px rgba(0,0,0,0.12);
-  font-size:14px;font-weight:600;color:#b80000;
+  font-weight:600;color:#b80000;
   background:#FFD6E7;
   transform:translate(-50%,-50%) scale(0.9);
   opacity:0;
@@ -87,24 +86,24 @@ function heartPoints(n){
 }
 function ordered(points){
   let minI=0,minY=points[0].y;
-  for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;}}
+  for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;} }
   return points.slice(minI).concat(points.slice(0,minI));
 }
 
-// 自动计算缩放和点数
+// 自适应心形和点数
 function computeScaleAndPoints(){
   const minSide = Math.min(window.innerWidth, window.innerHeight);
-  let scale = Math.max(8, Math.floor(minSide / (2 * 17 / 0.85)));
+  const baseWidth = 220, baseHeight = 70;
+  const maxRadius = (minSide/2) - Math.max(baseWidth, baseHeight)/2;
+  const scale = Math.max(3, maxRadius/17);
 
   let points;
-  if(minSide < 400){ points = 100; }
-  else if(minSide < 600){ points = 140; }
-  else if(minSide < 800){ points = 200; }
-  else{ points = 280; }
+  if(minSide < 350) points = 60;
+  else if(minSide < 500) points = 100;
+  else if(minSide < 700) points = 180;
+  else points = 280;
 
-  // 缩放小屏幕心形
-  const adjustedScale = scale * Math.min(1, minSide/800);
-  return { scale: adjustedScale, points };
+  return { scale, points };
 }
 
 // 弹窗生成
@@ -112,13 +111,10 @@ function makePopup(pt,text,scale){
   const el=document.createElement('div');
   el.className='popup';el.textContent=text;
   el.style.background=colors[Math.floor(Math.random()*colors.length)];
-
-  // 随机偏移，屏幕小则偏移小
   const minSide = Math.min(window.innerWidth, window.innerHeight);
-  const offset = Math.max(0, Math.min(8, 20 - minSide/40)); // 最大偏移8px，小屏幕偏小
+  const offset = Math.max(0, Math.min(8, 20 - minSide/40));
   const rx = (Math.random()-0.5)*offset;
   const ry = (Math.random()-0.5)*offset;
-
   const px=pt.x*scale+rx, py=-pt.y*scale+ry;
   el.style.left=`calc(50% + ${px}px)`;
   el.style.top=`calc(50% + ${py}px)`;
@@ -130,6 +126,7 @@ function makePopup(pt,text,scale){
   return el;
 }
 
+// 音乐淡入淡出
 function fadeInAudio(audio,duration=3000){
   audio.volume=0;
   let step=50, volStep=step/duration, vol=0;
@@ -175,6 +172,7 @@ async function showHeartWithMusic(){
   await new Promise(r=>setTimeout(r,900));
   stage.innerHTML='';
   currentPoints=[]; popups=[];
+  clickHint.style.display='block'; // 可再次点击
 }
 
 // 调整弹窗位置和大小
@@ -185,13 +183,10 @@ function resizePopups(){
   const scaleRatio = currentScale / originalScale;
   popups.forEach((el,i)=>{
     const pt=currentPoints[i];
-
-    // 随机偏移保持一致
     const minSide = Math.min(window.innerWidth, window.innerHeight);
     const offset = Math.max(0, Math.min(8, 20 - minSide/40));
     const rx = (Math.random()-0.5)*offset;
     const ry = (Math.random()-0.5)*offset;
-
     const px=pt.x*currentScale+rx, py=-pt.y*currentScale+ry;
     el.style.left=`calc(50% + ${px}px)`;
     el.style.top=`calc(50% + ${py}px)`;
@@ -207,7 +202,7 @@ window.addEventListener('resize', ()=>{
   resizeTimeout = setTimeout(resizePopups,50);
 });
 
-clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
+clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:false});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
 </script>
 </body>
