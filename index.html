@@ -106,21 +106,28 @@ function computeScaleAndPoints(){
   return { scale, points };
 }
 
-// 弹窗生成
+// 弹窗生成（大小统一）
 function makePopup(pt,text,scale){
   const el=document.createElement('div');
   el.className='popup';el.textContent=text;
   el.style.background=colors[Math.floor(Math.random()*colors.length)];
-  const minSide = Math.min(window.innerWidth, window.innerHeight);
-  const offset = Math.max(0, Math.min(8, 20 - minSide/40));
-  const rx = (Math.random()-0.5)*offset;
-  const ry = (Math.random()-0.5)*offset;
-  const px=pt.x*scale+rx, py=-pt.y*scale+ry;
+
+  const px = pt.x*scale;
+  const py = -pt.y*scale;
+
   el.style.left=`calc(50% + ${px}px)`;
   el.style.top=`calc(50% + ${py}px)`;
+
+  // 基础尺寸（所有弹窗统一）
   el.dataset.baseWidth = 220;
   el.dataset.baseHeight = 70;
   el.dataset.baseFont = 14;
+
+  const scaleRatio = scale / originalScale;
+  el.style.width = el.dataset.baseWidth * scaleRatio + 'px';
+  el.style.height = el.dataset.baseHeight * scaleRatio + 'px';
+  el.style.fontSize = el.dataset.baseFont * scaleRatio + 'px';
+
   stage.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));
   return el;
@@ -181,18 +188,19 @@ function resizePopups(){
   const { scale } = computeScaleAndPoints();
   currentScale = scale;
   const scaleRatio = currentScale / originalScale;
+
   popups.forEach((el,i)=>{
-    const pt=currentPoints[i];
-    const minSide = Math.min(window.innerWidth, window.innerHeight);
-    const offset = Math.max(0, Math.min(8, 20 - minSide/40));
-    const rx = (Math.random()-0.5)*offset;
-    const ry = (Math.random()-0.5)*offset;
-    const px=pt.x*currentScale+rx, py=-pt.y*currentScale+ry;
-    el.style.left=`calc(50% + ${px}px)`;
-    el.style.top=`calc(50% + ${py}px)`;
-    el.style.width = el.dataset.baseWidth*scaleRatio + 'px';
-    el.style.height = el.dataset.baseHeight*scaleRatio + 'px';
-    el.style.fontSize = el.dataset.baseFont*scaleRatio + 'px';
+    const pt = currentPoints[i];
+    const px=pt.x*currentScale;
+    const py=-pt.y*currentScale;
+
+    el.style.left = `calc(50% + ${px}px)`;
+    el.style.top  = `calc(50% + ${py}px)`;
+    
+    // 弹窗和文字大小统一
+    el.style.width = el.dataset.baseWidth * scaleRatio + 'px';
+    el.style.height = el.dataset.baseHeight * scaleRatio + 'px';
+    el.style.fontSize = el.dataset.baseFont * scaleRatio + 'px';
   });
 }
 
