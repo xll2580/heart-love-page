@@ -63,7 +63,7 @@ html,body{
 <audio id="bgm" src="music.mp3" loop></audio>
 
 <script>
-const POINTS=280,DELAY_MS=120,STAY_MS=10000;
+const DELAY_MS=120,STAY_MS=10000;
 const msgs=["保持好心情","多喝热水","早点休息","吃点水果",
             "要多笑一笑","祝你开心","放松一下","今天真好",
             "注意休息","记得微笑","开心每一天","温柔对待自己 💕"];
@@ -74,6 +74,7 @@ const clickHint=document.getElementById('clickHint');
 let currentPoints=[], currentScale=1, originalScale=1;
 let popups=[];
 
+// 心形基础点
 function heartPoints(n){
   const pts=[];
   for(let i=0;i<n;i++){
@@ -89,15 +90,36 @@ function ordered(points){
   for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;}}
   return points.slice(minI).concat(points.slice(0,minI));
 }
-function computeScale(){
-  const base=Math.min(window.innerWidth, window.innerHeight);
-  return Math.floor(base / (2 * 17 / 0.85));
+
+// 自动计算缩放和点数
+function computeScaleAndPoints(){
+  const minSide = Math.min(window.innerWidth, window.innerHeight);
+  let scale = Math.max(8, Math.floor(minSide / (2 * 17 / 0.85)));
+
+  let points;
+  if(minSide < 400){ points = 100; }
+  else if(minSide < 600){ points = 140; }
+  else if(minSide < 800){ points = 200; }
+  else{ points = 280; }
+
+  // 缩放小屏幕心形
+  const adjustedScale = scale * Math.min(1, minSide/800);
+  return { scale: adjustedScale, points };
 }
+
+// 弹窗生成
 function makePopup(pt,text,scale){
   const el=document.createElement('div');
   el.className='popup';el.textContent=text;
   el.style.background=colors[Math.floor(Math.random()*colors.length)];
-  const px=pt.x*scale, py=-pt.y*scale;
+
+  // 随机偏移，屏幕小则偏移小
+  const minSide = Math.min(window.innerWidth, window.innerHeight);
+  const offset = Math.max(0, Math.min(8, 20 - minSide/40)); // 最大偏移8px，小屏幕偏小
+  const rx = (Math.random()-0.5)*offset;
+  const ry = (Math.random()-0.5)*offset;
+
+  const px=pt.x*scale+rx, py=-pt.y*scale+ry;
   el.style.left=`calc(50% + ${px}px)`;
   el.style.top=`calc(50% + ${py}px)`;
   el.dataset.baseWidth = 220;
@@ -126,7 +148,7 @@ function fadeOutAudio(audio,duration=3000){
   }, step);
 }
 
-// 弹窗依次显示
+// 主动画
 async function showHeartWithMusic(){
   clickHint.style.display='none';
   stage.innerHTML='';
@@ -134,12 +156,12 @@ async function showHeartWithMusic(){
 
   const bgm=document.getElementById('bgm');
   bgm.play().catch(()=>{});
-  fadeInAudio(bgm, DELAY_MS*POINTS);
 
-  const pts=ordered(heartPoints(POINTS));
+  const { scale, points } = computeScaleAndPoints();
+  currentScale = scale;
+  const pts=ordered(heartPoints(points));
   currentPoints=pts;
-  originalScale = computeScale();
-  currentScale = originalScale;
+  originalScale = scale;
 
   for(const pt of pts){
     const popup = makePopup(pt,msgs[Math.floor(Math.random()*msgs.length)],currentScale);
@@ -155,14 +177,22 @@ async function showHeartWithMusic(){
   currentPoints=[]; popups=[];
 }
 
-// 平滑缩放函数
+// 调整弹窗位置和大小
 function resizePopups(){
   if(currentPoints.length===0) return;
-  currentScale = computeScale();
+  const { scale } = computeScaleAndPoints();
+  currentScale = scale;
   const scaleRatio = currentScale / originalScale;
   popups.forEach((el,i)=>{
     const pt=currentPoints[i];
-    const px=pt.x*currentScale, py=-pt.y*currentScale;
+
+    // 随机偏移保持一致
+    const minSide = Math.min(window.innerWidth, window.innerHeight);
+    const offset = Math.max(0, Math.min(8, 20 - minSide/40));
+    const rx = (Math.random()-0.5)*offset;
+    const ry = (Math.random()-0.5)*offset;
+
+    const px=pt.x*currentScale+rx, py=-pt.y*currentScale+ry;
     el.style.left=`calc(50% + ${px}px)`;
     el.style.top=`calc(50% + ${py}px)`;
     el.style.width = el.dataset.baseWidth*scaleRatio + 'px';
@@ -171,16 +201,13 @@ function resizePopups(){
   });
 }
 
-// 窗口缩放时平滑过渡
 let resizeTimeout;
 window.addEventListener('resize', ()=>{
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(resizePopups, 50); // 50ms 延迟避免频繁触发
+  resizeTimeout = setTimeout(resizePopups,50);
 });
 
 clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
-
-// 注册 Service Worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
 </script>
 </body>
