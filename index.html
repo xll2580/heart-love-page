@@ -1,105 +1,61 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>天天开心</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>天天开心 ❤️</title>
 <style>
 html,body{
-  height:100%;
-  margin:0;
-  background: radial-gradient(circle at 50% 30%, #FFF6F9 0%, #FFF 40%, #F7FBFF 100%);
+  margin:0; padding:0; height:100%; width:100%;
   font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
+  display:flex; justify-content:center; align-items:center;
+  background: radial-gradient(circle at 50% 30%, #FFF6F9 0%, #FFF 40%, #F7FBFF 100%);
   overflow:hidden;
-  display:flex;
-  justify-content:center;
-  align-items:center;
 }
 
-/* 小窗弹窗 */
 .window{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%) scale(1);
-  background: rgba(255,255,255,0.95);
-  border-radius:16px;
-  box-shadow:0 8px 20px rgba(0,0,0,0.15);
-  width:300px;
-  padding:20px;
-  text-align:center;
-  cursor:default;
-  user-select:none;
-  opacity:0;
-  transition:opacity 0.3s ease, transform 0.3s ease;
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  background: rgba(255,255,255,0.95); border-radius:16px; padding:20px;
+  width:300px; text-align:center; box-shadow:0 8px 20px rgba(0,0,0,0.15);
+  cursor:default; user-select:none; opacity:0; transition:opacity 0.3s ease, transform 0.3s ease;
 }
 
-.window.show{
-  opacity:1;
-  transform:translate(-50%,-50%) scale(1);
-}
+.window.show{opacity:1;}
 
-/* 关闭按钮 */
 .closeBtn{
-  position:absolute;
-  top:10px;
-  right:12px;
-  font-size:18px;
-  font-weight:bold;
-  color:#b80000;
-  cursor:pointer;
+  position:absolute; top:10px; right:12px; font-size:18px; font-weight:bold;
+  color:#b80000; cursor:pointer;
 }
 
-/* 上半部分文字（点击开始） */
+#clickHint, #dailyHint{
+  border-radius:12px; padding:10px 16px; cursor:pointer; display:inline-block;
+  animation:pulse 1s infinite;
+}
+
 #clickHint{
-  font-size:22px;
-  color:#b80000;
-  background: rgba(255,230,240,0.9);
-  padding:10px 16px;
-  border-radius:12px;
-  margin-bottom:12px;
-  animation: pulse 1s infinite;
-  cursor:pointer;
+  font-size:22px; color:#b80000; background: rgba(255,230,240,0.9); margin-bottom:12px;
 }
-
-/* 下半部分文字（祝你天天开心） */
 #dailyHint{
-  font-size:28px;
-  font-weight:bold;
-  color:#b80000;
-  background: rgba(255,245,230,0.9);
-  padding:12px 16px;
-  border-radius:12px;
-  animation: pulse 1s infinite;
-  cursor:pointer; /* 可以点击消失 */
+  font-size:28px; font-weight:bold; color:#b80000; background: rgba(255,245,230,0.9);
 }
 
-@keyframes pulse {
-  0%,100%{ transform: scale(1); opacity:1; }
-  50%{ transform: scale(1.05); opacity:0.85; }
+@keyframes pulse{
+  0%,100%{ transform: scale(1); opacity:1;}
+  50%{ transform: scale(1.05); opacity:0.85;}
 }
 
-/* 心形弹窗 */
 .stage{
-  position:fixed;inset:0;overflow:hidden;
-  pointer-events:none;
+  position:fixed; inset:0; pointer-events:none; overflow:visible;
 }
 .popup{
-  position:absolute;
-  width:220px;height:70px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:12px;padding:8px 12px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.12);
-  font-size:14px;font-weight:600;color:#b80000;
-  background:#FFD6E7;
-  transform:translate(-50%,-50%) scale(0.9);
-  opacity:0;
-  transition:opacity .18s ease,transform .18s ease,
-              left .2s ease,top .2s ease,
-              width .2s ease,height .2s ease,font-size .2s ease;
+  position:absolute; display:flex; align-items:center; justify-content:center;
+  border-radius:12px; padding:8px 12px; font-weight:600; color:#b80000;
+  font-size:14px; background:#FFD6E7;
+  transform:translate(-50%,-50%) scale(0.9); opacity:0;
+  transition:opacity .18s ease, transform .18s ease;
 }
-.popup.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
-.fadeout{transition:opacity .9s ease;opacity:0!important;}
+.popup.show{opacity:1; transform:translate(-50%,-50%) scale(1);}
+.popup.fadeout{opacity:0!important; transition:opacity 0.9s ease;}
 </style>
 </head>
 <body>
@@ -114,10 +70,7 @@ html,body{
 <audio id="bgm" src="music.mp3" loop></audio>
 
 <script>
-const POINTS=280,DELAY_MS=120,STAY_MS=10000;
-const msgs=["保持好心情","多喝热水","早点休息","吃点水果",
-            "要多笑一笑","祝你开心","放松一下","今天真好",
-            "注意休息","记得微笑","开心每一天","温柔对待自己 💕"];
+const msgs=["保持好心情","多喝热水","早点休息","吃点水果","要多笑一笑","祝你开心","放松一下","今天真好","注意休息","记得微笑","开心每一天","温柔对待自己 💕"];
 const colors=["#FFD6E7","#FFF0B3","#C8F7C5","#C5F0FF","#E6E6FA","#FFB6C1","#FFDAB9","#FFFACD"];
 const stage=document.getElementById('stage');
 const clickHint=document.getElementById('clickHint');
@@ -125,51 +78,51 @@ const dailyHint=document.getElementById('dailyHint');
 const windowDiv=document.getElementById('window');
 const closeBtn=document.getElementById('closeBtn');
 
-let currentPoints=[], currentScale=1, originalScale=1;
-let popups=[];
+let currentPoints=[], popups=[], scale=1;
+let POINTS = window.innerWidth < 500 ? 120 : 280; // 小屏减少点数
+const DELAY_MS = 120, STAY_MS=8000;
 
 // 关闭窗口
-closeBtn.addEventListener('click',()=>{
-  windowDiv.style.display='none';
-});
+closeBtn.addEventListener('click',()=>windowDiv.style.display='none');
 
-// 心形点位
+// 心形生成
 function heartPoints(n){
   const pts=[];
   for(let i=0;i<n;i++){
     const t=2*Math.PI*i/n;
-    const x=16*Math.sin(t)**3;
+    const x=16*Math.pow(Math.sin(t),3);
     const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
     pts.push({x,y});
   }
-  return pts;
+  // 从最低点开始顺序排列
+  let minI=0,minY=pts[0].y;
+  for(let i=1;i<pts.length;i++) if(pts[i].y<minY){minY=pts[i].y; minI=i;}
+  return pts.slice(minI).concat(pts.slice(0,minI));
 }
-function ordered(points){
-  let minI=0,minY=points[0].y;
-  for(let i=1;i<points.length;i++){if(points[i].y<minY){minY=points[i].y;minI=i;}}
-  return points.slice(minI).concat(points.slice(0,minI));
-}
+
+// 根据屏幕计算缩放
 function computeScale(){
-  const base=Math.min(window.innerWidth, window.innerHeight);
-  return Math.floor(base / (2 * 17 / 0.85));
+  const base = Math.min(window.innerWidth, window.innerHeight);
+  return Math.floor(base / (2*17/0.85));
 }
-function makePopup(pt,text,scale){
+
+// 创建弹窗
+function makePopup(pt,text){
   const el=document.createElement('div');
-  el.className='popup';el.textContent=text;
+  el.className='popup'; el.textContent=text;
   el.style.background=colors[Math.floor(Math.random()*colors.length)];
   const px=pt.x*scale, py=-pt.y*scale;
   el.style.left=`calc(50% + ${px}px)`;
   el.style.top=`calc(50% + ${py}px)`;
-  el.dataset.baseWidth = 220;
-  el.dataset.baseHeight = 70;
-  el.dataset.baseFont = 14;
   stage.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));
   return el;
 }
 
+// 音乐淡入
 function fadeInAudio(audio,duration=3000){
   audio.volume=0;
+  audio.play().catch(()=>{});
   let step=50, volStep=step/duration, vol=0;
   const interval=setInterval(()=>{
     vol+=volStep;
@@ -177,6 +130,8 @@ function fadeInAudio(audio,duration=3000){
     audio.volume=vol;
   }, step);
 }
+
+// 音乐淡出
 function fadeOutAudio(audio,duration=3000){
   let step=50, volStep=step/duration, vol=audio.volume;
   const interval=setInterval(()=>{
@@ -186,69 +141,50 @@ function fadeOutAudio(audio,duration=3000){
   }, step);
 }
 
-async function showHeartWithMusic(){
-  // 点击开始文字缩小
+// 展示心形动画
+async function showHeart(){
   clickHint.style.fontSize='16px';
-  // 底部文字变大
   dailyHint.style.fontSize='36px';
-
-  // 点击任意一行文字后隐藏整个小窗
   windowDiv.classList.remove('show');
-
   const bgm=document.getElementById('bgm');
-  bgm.play().catch(()=>{});
   fadeInAudio(bgm, DELAY_MS*POINTS);
 
-  const pts=ordered(heartPoints(POINTS));
-  currentPoints=pts;
-  originalScale = computeScale();
-  currentScale = originalScale;
+  currentPoints = heartPoints(POINTS);
+  scale = computeScale();
 
-  for(const pt of pts){
-    const popup = makePopup(pt,msgs[Math.floor(Math.random()*msgs.length)],currentScale);
+  for(const pt of currentPoints){
+    const popup = makePopup(pt, msgs[Math.floor(Math.random()*msgs.length)]);
     popups.push(popup);
-    await new Promise(r=>setTimeout(r,DELAY_MS));
+    await new Promise(r=>setTimeout(r, DELAY_MS));
   }
 
-  await new Promise(r=>setTimeout(r,STAY_MS));
+  await new Promise(r=>setTimeout(r, STAY_MS));
   popups.forEach(e=>e.classList.add('fadeout'));
   fadeOutAudio(bgm,900);
   await new Promise(r=>setTimeout(r,900));
-  stage.innerHTML='';
-  currentPoints=[]; popups=[];
+  stage.innerHTML=''; currentPoints=[]; popups=[];
 }
 
+// 自适应缩放弹窗
 function resizePopups(){
   if(currentPoints.length===0) return;
-  currentScale = computeScale();
-  const scaleRatio = currentScale / originalScale;
+  scale = computeScale();
   popups.forEach((el,i)=>{
     const pt=currentPoints[i];
-    const px=pt.x*currentScale, py=-pt.y*currentScale;
-    el.style.left=`calc(50% + ${px}px)`;
-    el.style.top=`calc(50% + ${py}px)`;
-    el.style.width = el.dataset.baseWidth*scaleRatio + 'px';
-    el.style.height = el.dataset.baseHeight*scaleRatio + 'px';
-    el.style.fontSize = el.dataset.baseFont*scaleRatio + 'px';
+    el.style.left=`calc(50% + ${pt.x*scale}px)`;
+    el.style.top=`calc(50% + ${-pt.y*scale}px)`;
   });
 }
 
-let resizeTimeout;
-window.addEventListener('resize', ()=>{
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(resizePopups, 50);
-});
+window.addEventListener('resize',()=>{ setTimeout(resizePopups,50); });
 
 // 初始显示窗口
-requestAnimationFrame(()=>{
-  windowDiv.classList.add('show');
-});
+requestAnimationFrame(()=>windowDiv.classList.add('show'));
 
-// 点击任意文字触发心形弹窗
-clickHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
-dailyHint.addEventListener('click', ()=>showHeartWithMusic(), {once:true});
+// 点击任意文字触发动画
+clickHint.addEventListener('click',()=>showHeart(), {once:true});
+dailyHint.addEventListener('click',()=>showHeart(), {once:true});
 
-if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
 </script>
 </body>
 </html>
